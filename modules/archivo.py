@@ -4,12 +4,7 @@ Created on 9/10/2024
 
 @author: Paula Martínez Camarero y Andrés Estévez Ubierna
 """
-# -- coding: utf-8 --
-"""
-Created on 9/10/2024
 
-@author: Paula Martínez Camarero y Andrés Estévez Ubierna
-"""
 
 #FUNCIONES MODULARIZADAS:
 
@@ -214,6 +209,49 @@ def MuestraVolumen(volumen, tamaño_imagen, aspecto_axial, aspecto_coronal, aspe
     plt.show()
 
 
+import os
+import numpy as np
+from skimage import io
+import matplotlib.pyplot as plt
+
+def GuardaImagenes(volumen, tamaño_imagen, aspecto_axial, aspecto_coronal, aspecto_sagital, carpeta_salida="results", nombre_base="imagen"):
+    """
+    Guarda las vistas axial, coronal y sagital de un volumen 3D DICOM en formato PNG.
+    
+    Parámetros:
+        volumen: Array 3D que contiene el volumen de las imágenes en escala Hounsfield.
+        tamaño_imagen: Dimensiones del volumen (profundidad, altura, ancho).
+        aspecto_axial: Relación de aspecto para la vista axial.
+        aspecto_coronal: Relación de aspecto para la vista coronal.
+        aspecto_sagital: Relación de aspecto para la vista sagital.
+        carpeta_salida: Carpeta donde se guardarán las imágenes.
+        nombre_base: Nombre base para los archivos de imagen.
+    """
+    os.makedirs(carpeta_salida, exist_ok=True)
+    
+    # Calcular índices para cortes medios
+    corte_axial = tamaño_imagen[0] // 2  
+    corte_coronal = tamaño_imagen[1] // 2  
+    corte_sagital = tamaño_imagen[2] // 2  
+
+    # Vista axial
+    imagen_axial = volumen[corte_axial, :, :]
+    nombre_archivo_axial = f"{nombre_base}_axial.png"
+    io.imsave(os.path.join(carpeta_salida, nombre_archivo_axial), (imagen_axial.astype(np.uint8) * 255))
+    
+    # Vista coronal
+    imagen_coronal = volumen[:, corte_coronal, :]
+    nombre_archivo_coronal = f"{nombre_base}_coronal.png"
+    io.imsave(os.path.join(carpeta_salida, nombre_archivo_coronal), (imagen_coronal.astype(np.uint8) * 255))
+
+    # Vista sagital
+    imagen_sagital = volumen[:, :, corte_sagital]
+    nombre_archivo_sagital = f"{nombre_base}_sagital.png"
+    io.imsave(os.path.join(carpeta_salida, nombre_archivo_sagital), (imagen_sagital.astype(np.uint8) * 255))
+
+    print(f"Imágenes guardadas en la carpeta: {carpeta_salida}")
+
+
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -386,7 +424,7 @@ import os
 from skimage import io
 import numpy as np
 
-def guarda_segmentaciones_hu(segmentaciones, tipo_corte="axial", carpeta_salida="imagenes_hu"):
+def guarda_segmentaciones_hu(segmentaciones, tipo_corte="axial", carpeta_salida="results"):
     """
     Guarda las imágenes de las segmentaciones en archivos .png en una carpeta especificada.
     
@@ -425,7 +463,7 @@ import os
 from skimage import io
 import numpy as np
 
-def GuardaSegmentacionOtsu(volumen_segmentado, tipo_corte="axial", carpeta_salida="imagenes_otsu", nombre_base="segmentacion"):
+def GuardaSegmentacionOtsu(volumen_segmentado, tipo_corte="axial", carpeta_salida="results"):
     """
     Guarda la imagen de segmentación Otsu en formato PNG en la carpeta especificada.
     
@@ -458,5 +496,7 @@ def GuardaSegmentacionOtsu(volumen_segmentado, tipo_corte="axial", carpeta_salid
     #guardar la imagen en formato PNG
     io.imsave(ruta_completa, imagen.astype(np.uint8) * 255)
     print(f"Imagen guardada en: {ruta_completa}")
+
+
 
 
