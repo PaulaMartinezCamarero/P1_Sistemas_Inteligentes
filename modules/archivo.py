@@ -157,140 +157,66 @@ def MetadataDT(imagenes):
     return metadatos_imagen
 
 
+
+
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 
-def MuestraVolumen(volumen, tamaño_imagen, aspecto_axial, aspecto_coronal, aspecto_sagital):
+def MuestraVolumen(volumen, tamaño_imagen, aspecto_axial, aspecto_coronal, aspecto_sagital, titulo="Volumen"):
     '''
-    Muestra  vistas axial, coronal y sagital de un volumen 3D DICOM.
-
-    Parámetros:
-
-     volumen: 
-         Array 3D que contiene el volumen de las imágenes en escala Hounsfield.
-     tamaño_imagen: 
-         Dimensiones del volumen (profundidad, altura, ancho).
-     aspecto_axial: 
-         Relación de aspecto para la vista axial.
-     aspecto_coronal:
-         Relación de aspecto para la vista coronal.
-     aspecto_sagital: 
-         Relación de aspecto para la vista sagital.
-
-    Returns:
-    
-     None
-         Muestra las imágenes en un gráfico de matplotlib.
+    Muestra vistas axial, coronal y sagital de un volumen 3D DICOM.
     '''
-    
-    #calcular índices para cortes medios
     corte_axial = tamaño_imagen[0] // 2  
     corte_coronal = tamaño_imagen[1] // 2  
     corte_sagital = tamaño_imagen[2] // 2  
 
-    # configuramos el subplot
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    fig.suptitle(titulo, fontsize=16)
 
-    # vista axial (se hace el corte medio en el plano Z (cabe desstacar que este sería el plano X(horizontal) al que estamos acostumbrados)
-    axes[0].imshow(volumen[corte_axial, :, :], cmap='gray', aspect=aspecto_axial)
+    # Vista axial
+    axes[0].imshow(volumen[corte_axial, :, :], cmap='gray', aspect=aspect_axial)
     axes[0].set_title('Vista Axial')
 
-    # vista coronal (se hace el corte medio en el plano Y)
-    axes[1].imshow(volumen[:, corte_coronal, :], cmap='gray', aspect=aspecto_coronal)
+    # Vista coronal
+    axes[1].imshow(volumen[:, corte_coronal, :], cmap='gray', aspect=aspect_coronal)
     axes[1].set_title('Vista Coronal')
 
-    # vista sagital (se hace el corte medio en el plano X,(seria el plano Z),pero utlizamos notación técnica.
-    axes[2].imshow(volumen[:, :, corte_sagital], cmap='gray', aspect=aspecto_sagital)
+    # Vista sagital
+    axes[2].imshow(volumen[:, :, corte_sagital], cmap='gray', aspect=aspect_sagital)
     axes[2].set_title('Vista Sagital')
 
-    #ajusta el diseño del gráfico
     plt.tight_layout()
     plt.show()
 
-
-
-import numpy as np
-import matplotlib.pyplot as plt
 
 def segmentacion_hu(volumen, umbrales_hu):
     '''
     Segmenta un volumen 3D según los umbrales de Hounsfield Units.
-
-    Parámetros:
-     volumen:
-         Array 3D con valores en escala Hounsfield.
-     umbrales_hu: 
-         Diccionario que para cada tejido contiene los umbrales HU.
-
-    Returns:
-     segmentaciones: 
-         Diccionario con máscaras binarias para cada tipo de tejido.
     '''
     segmentaciones = {}
     for tejido, (hu_min, hu_max) in umbrales_hu.items():
-        # Crear máscara binaria para el tejido basado en los umbrales HU
         segmentaciones[tejido] = np.logical_and(volumen >= hu_min, volumen <= hu_max).astype(np.uint8)
     return segmentaciones
 
-    
-def mostrar_segmentaciones(volumen, segmentaciones, tipo_corte="axial", titulo="Segmentación"):
+
+def MuestraSegmentaciones(volumen, tamaño_imagen, aspecto_axial, aspecto_coronal, aspecto_sagital, umbrales_hu):
     '''
-    Muestra el volumen original y las segmentaciones en un gráfico.
-
-    Parámetros:
-     volumen:
-         Array 3D del volumen de imágenes.
-     segmentaciones:
-         Diccionario con segmentaciones de los tejidos.
-     tipo_corte:
-         El tipo de corte a mostrar ("axial", "coronal" o "sagital").
-     titulo:
-         Título del gráfico.
+    Realiza la segmentación y muestra las vistas axial, coronal y sagital para cada tejido.
     '''
-    #definimos el índice central para el corte
-    if tipo_corte == "axial":
-        indice = volumen.shape[0] // 2
-    elif tipo_corte == "coronal":
-        indice = volumen.shape[1] // 2
-    elif tipo_corte == "sagital":
-        indice = volumen.shape[2] // 2
-    else:
-        print("Tipo de corte no válido. Usa 'axial', 'coronal' o 'sagital'.")
-        
+    # Obtener segmentaciones
+    segmentaciones = segmentacion_hu(volumen, umbrales_hu)
 
-    fig, axes = plt.subplots(1, len(segmentaciones) + 1, figsize=(20, 5))
+    # Mostrar el volumen original
+    MuestraVolumen(volumen, tamaño_imagen, aspecto_axial, aspecto_coronal, aspecto_sagital, titulo="Volumen Original")
 
-    # mostrar la imagen original en el corte seleccionado
-    if tipo_corte == "axial":
-        corte_original = volumen[indice, :, :]
-    elif tipo_corte == "coronal":
-        corte_original = volumen[:, indice, :]
-    elif tipo_corte == "sagital":
-        corte_original = volumen[:, :, indice].T
-        
-    axes[0].imshow(corte_original, cmap='gray')
-    axes[0].set_title(f"Original ({tipo_corte.capitalize()})")
-    axes[0].axis('off')
-
-    # Mostrar cada segmento en el corte seleccionado
-    for i, (tejido, segmentacion) in enumerate(segmentaciones.items(), start=1):
-        if tipo_corte == "axial":
-            corte_segmento = segmentacion[indice, :, :]
-        elif tipo_corte == "coronal":
-            corte_segmento = segmentacion[:, indice, :]
-        elif tipo_corte == "sagital":
-            corte_segmento = segmentacion[:, :, indice].T
-            
-        axes[i].imshow(corte_segmento, cmap='gray')
-        axes[i].set_title(tejido.capitalize())
-        axes[i].axis('off')
-
-    plt.suptitle(titulo)
-    plt.tight_layout()
-    plt.show()
+    # Mostrar cada segmento por tejido
+    for tejido, segmentacion in segmentaciones.items():
+        MuestraVolumen(segmentacion, tamaño_imagen, aspecto_axial, aspecto_coronal, aspecto_sagital, titulo=f"Segmentación: {tejido.capitalize()}")
 
 
-# definir umbrales de HU especificos para cada tejido
+# Definir los umbrales de HU específicos para cada tejido
 umbrales_hu = {
     "aire": (-1000, -700),
     "grasa": (-120, -50),
@@ -300,9 +226,8 @@ umbrales_hu = {
 }
 
 
-import numpy as np
-import matplotlib.pyplot as plt
-from skimage.filters import threshold_otsu
+#NUEVO DE OTSU:
+
 
 def Segmentar_Otsu(volumen):
     '''
@@ -316,64 +241,44 @@ def Segmentar_Otsu(volumen):
      volumen_segmentado:
          Array 3D con las máscaras segmentadas.
     '''
-    #inicializamos un volumen para las máscaras segmentadas
+    # Inicializar un volumen para las máscaras segmentadas
     volumen_segmentado = np.zeros(volumen.shape)
     
-    # recorremos cada corte del volumen
+    # Recorrer cada corte del volumen
     for i in range(volumen.shape[0]):
-        # obtener la imagen del corte actual
+        # Obtener la imagen del corte actual
         imagen = volumen[i]
         
-        # calcular el umbral de Otsu
+        # Calcular el umbral de Otsu
         umbral = threshold_otsu(imagen)
         
-        # aplicar el umbral para crear la máscara segmentada
+        # Aplicar el umbral para crear la máscara segmentada
         volumen_segmentado[i] = imagen > umbral
     
     return volumen_segmentado
 
 
-import numpy as np
-import matplotlib.pyplot as plt
-
-def MuestraSegmentacionOtsu(volumen_segmentado, tipo_corte="axial", titulo="Segmentación Otsu"):
+def MuestraSegmentacionOtsu(volumen, tamaño_imagen, aspecto_axial, aspecto_coronal, aspecto_sagital):
     '''
-    Muestra el volumen segmentado usando el método de Otsu.
+    Realiza la segmentación mediante Otsu y muestra las vistas axial, coronal y sagital.
 
     Parámetros:
-     volumen_segmentado:
-         Array 3D con el volumen segmentado.
-     tipo_corte: 
-         Tipo de corte para visualizar ('axial', 'coronal', 'sagital').
-     titulo: 
-         Título de la visualización.
+     volumen:
+         Array 3D del volumen de imágenes.
+     tamaño_imagen:
+         Dimensiones del volumen (profundidad, altura, ancho).
+     aspecto_axial:
+         Relación de aspecto para la vista axial.
+     aspecto_coronal:
+         Relación de aspecto para la vista coronal.
+     aspecto_sagital:
+         Relación de aspecto para la vista sagital.
     '''
-    
-    #definir el índice central para el corte
-    if tipo_corte == "axial":
-        indice = volumen_segmentado.shape[0] // 2
-    elif tipo_corte == "coronal":
-        indice = volumen_segmentado.shape[1] // 2
-    elif tipo_corte == "sagital":
-        indice = volumen_segmentado.shape[2] // 2
-    else:
-        print("Tipo de corte no válido. Usa 'axial', 'coronal' o 'sagital'.")
+    # Obtener el volumen segmentado
+    volumen_segmentado = Segmentar_Otsu(volumen)
 
-
-    # seleccionar el corte según el tipo
-    if tipo_corte == "axial":
-        corte_segmentado = volumen_segmentado[indice, :, :]
-    elif tipo_corte == "coronal":
-        corte_segmentado = volumen_segmentado[:, indice, :]
-    elif tipo_corte == "sagital":
-        corte_segmentado = volumen_segmentado[:, :, indice]
-
-    # mostramos segmentación
-    plt.figure(figsize=(8, 8))
-    plt.imshow(corte_segmentado, cmap='gray')
-    plt.title(f"{titulo} ({tipo_corte.capitalize()})")
-    plt.axis('off')
-    plt.show()
+    # Mostrar el volumen segmentado en las vistas axial, coronal y sagital
+    MuestraVolumen(volumen_segmentado, tamaño_imagen, aspecto_axial, aspecto_coronal, aspecto_sagital, titulo="Segmentación Otsu")
 
 
 import os
