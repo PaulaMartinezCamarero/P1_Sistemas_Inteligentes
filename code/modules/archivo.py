@@ -4,12 +4,6 @@ Created on 9/10/2024
 
 @author: Paula Martínez Camarero y Andrés Estévez Ubierna
 """
-# -- coding: utf-8 --
-"""
-Created on 9/10/2024
-
-@author: Paula Martínez Camarero y Andrés Estévez Ubierna
-"""
 
 #FUNCIONES MODULARIZADAS:
 
@@ -90,9 +84,9 @@ def CreaVolumen(imagenes):
         
     # calculamos la relación de aspecto
     relacion_aspecto = (
-        slice_thickness / pixel_spacing[0],
-        pixel_spacing[0] / pixel_spacing[1],
-        slice_thickness / pixel_spacing[1]
+        slice_thickness / pixel_spacing[0], #axial
+        pixel_spacing[0] / pixel_spacing[1], #sagital
+        slice_thickness / pixel_spacing[1] #coronal
     )
 
     # devuelve el volumen, las dimensiones, la relación de aspecto y el tamaño del voxel
@@ -197,7 +191,7 @@ def MuestraVolumen(volumen, tamaño_imagen, aspecto_axial, aspecto_coronal, aspe
     # configuramos el subplot
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-    # vista axial (se hace el corte medio en el plano Z)
+    # vista axial (se hace el corte medio en el plano Z (cabe desstacar que este sería el plano X(horizontal) al que estamos acostumbrados)
     axes[0].imshow(volumen[corte_axial, :, :], cmap='gray', aspect=aspecto_axial)
     axes[0].set_title('Vista Axial')
 
@@ -205,7 +199,7 @@ def MuestraVolumen(volumen, tamaño_imagen, aspecto_axial, aspecto_coronal, aspe
     axes[1].imshow(volumen[:, corte_coronal, :], cmap='gray', aspect=aspecto_coronal)
     axes[1].set_title('Vista Coronal')
 
-    # vista sagital (se hace el corte medio en el plano X)
+    # vista sagital (se hace el corte medio en el plano X,(seria el plano Z),pero utlizamos notación técnica.
     axes[2].imshow(volumen[:, :, corte_sagital], cmap='gray', aspect=aspecto_sagital)
     axes[2].set_title('Vista Sagital')
 
@@ -279,7 +273,7 @@ def mostrar_segmentaciones(volumen, segmentaciones, tipo_corte="axial", titulo="
     axes[0].axis('off')
 
     # Mostrar cada segmento en el corte seleccionado
-    for idx, (tejido, segmentacion) in enumerate(segmentaciones.items(), start=1):
+    for i, (tejido, segmentacion) in enumerate(segmentaciones.items(), start=1):
         if tipo_corte == "axial":
             corte_segmento = segmentacion[indice, :, :]
         elif tipo_corte == "coronal":
@@ -287,9 +281,9 @@ def mostrar_segmentaciones(volumen, segmentaciones, tipo_corte="axial", titulo="
         elif tipo_corte == "sagital":
             corte_segmento = segmentacion[:, :, indice].T
             
-        axes[idx].imshow(corte_segmento, cmap='gray')
-        axes[idx].set_title(tejido.capitalize())
-        axes[idx].axis('off')
+        axes[i].imshow(corte_segmento, cmap='gray')
+        axes[i].set_title(tejido.capitalize())
+        axes[i].axis('off')
 
     plt.suptitle(titulo)
     plt.tight_layout()
@@ -323,7 +317,7 @@ def Segmentar_Otsu(volumen):
          Array 3D con las máscaras segmentadas.
     '''
     #inicializamos un volumen para las máscaras segmentadas
-    volumen_segmentado = np.zeros_like(volumen)
+    volumen_segmentado = np.zeros(volumen.shape)
     
     # recorremos cada corte del volumen
     for i in range(volumen.shape[0]):
@@ -396,7 +390,7 @@ def guarda_segmentaciones_hu(segmentaciones, tipo_corte="axial", carpeta_salida=
         carpeta_salida: Ruta de la carpeta donde se guardarán las imágenes.
     """
     # creamos carpeta de salida si no existe
-    os.makedirs(carpeta_salida, exist_ok=True)
+    os.makedirs(carpeta_salida)
     
     # guardar cada segmento como una imagen individual
     for tejido, segmentacion in segmentaciones.items():
@@ -411,13 +405,13 @@ def guarda_segmentaciones_hu(segmentaciones, tipo_corte="axial", carpeta_salida=
             print("Tipo de corte no válido. Usa 'axial', 'coronal' o 'sagital'.")
         
         
-        # generar la ruta completa del archivo
-        nombre_archivo = f"{tejido}_{tipo_corte}.png"
-        ruta_completa = os.path.join(carpeta_salida, nombre_archivo)
-        
-        #guardar la imagen en formato PNG
-        io.imsave(ruta_completa, imagen.astype(np.uint8) * 255)  # Convertir a escala de grises
-        print(f"Imagen guardada: {ruta_completa}")
+    nombre_archivo = f"{tejido}_{tipo_corte}.png"
+    ruta_completa = carpeta_salida + "/" + nombre_archivo
+    
+    # Guardar la imagen en formato PNG
+    io.imsave(ruta_completa, imagen.astype(np.uint8) * 255)  # Convertir a escala de grises
+    print(f"Imagen guardada: {ruta_completa}")
+
 
 
 
@@ -435,7 +429,7 @@ def GuardaSegmentacionOtsu(volumen_segmentado, tipo_corte="axial", carpeta_salid
         carpeta_salida: Carpeta donde se guardará la imagen.
         nombre_base: Nombre base para el archivo de imagen.
     """
-    os.makedirs(carpeta_salida, exist_ok=True)
+    os.makedirs(carpeta_salida)
     
     # definir el corte según el tipo especificado
     if tipo_corte == "axial":
@@ -453,10 +447,11 @@ def GuardaSegmentacionOtsu(volumen_segmentado, tipo_corte="axial", carpeta_salid
 
     # generar el nombre completo del archivo
     nombre_archivo = f"{nombre_base}_{tipo_corte}.png"
-    ruta_completa = os.path.join(carpeta_salida, nombre_archivo)
+    ruta_completa = carpeta_salida + "/" + nombre_archivo
     
-    #guardar la imagen en formato PNG
+    # Guardar la imagen en formato PNG
     io.imsave(ruta_completa, imagen.astype(np.uint8) * 255)
     print(f"Imagen guardada en: {ruta_completa}")
+
 
 
