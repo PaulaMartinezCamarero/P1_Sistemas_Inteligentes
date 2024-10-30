@@ -268,6 +268,8 @@ import numpy as np
 from skimage import io
 from skimage.filters import threshold_multiotsu
 
+
+
 def Segmentar_Otsu(volumen, classes=3):
     '''
     Segmenta tejidos en un volumen 3D utilizando el umbral Otsu con múltiples clases.
