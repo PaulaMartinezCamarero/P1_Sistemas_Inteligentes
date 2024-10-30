@@ -226,7 +226,7 @@ def segmentacion_hu(volumen, umbrales_hu):
      segmentaciones: 
          Diccionario con máscaras binarias para cada tipo de tejido.
     '''
-    segmentaciones = {}
+    segmentaciones ={}
     for tejido, (hu_min, hu_max) in umbrales_hu.items():
         # Crear máscara binaria para el tejido basado en los umbrales HU
         segmentaciones[tejido] = np.logical_and(volumen >= hu_min, volumen <= hu_max).astype(np.uint8)
