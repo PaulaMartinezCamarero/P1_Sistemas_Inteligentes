@@ -164,10 +164,12 @@ def MetadataDT(imagenes):
 import numpy as np
 import matplotlib.pyplot as plt
 
-def MuestraVolumen(volumen, tamaño_imagen, aspecto_axial, aspecto_coronal, aspecto_sagital, titulo="Volumen"):
+def MuestraVolumen(imagenes, titulo="Volumen"):
     '''
-    Muestra vistas axial, coronal y sagital de un volumen 3D DICOM.
+    Crea un volumen 3D a partir de imágenes DICOM y muestra vistas axial, coronal y sagital.
     '''
+    volumen, tamaño_imagen, relacion_aspecto, _ = CreaVolumen(imagenes)
+
     corte_axial = tamaño_imagen[0] // 2  
     corte_coronal = tamaño_imagen[1] // 2  
     corte_sagital = tamaño_imagen[2] // 2  
@@ -176,20 +178,19 @@ def MuestraVolumen(volumen, tamaño_imagen, aspecto_axial, aspecto_coronal, aspe
     fig.suptitle(titulo, fontsize=16)
 
     # Vista axial
-    axes[0].imshow(volumen[corte_axial, :, :], cmap='gray', aspect=aspect_axial)
+    axes[0].imshow(volumen[corte_axial, :, :], cmap='gray', aspect=relacion_aspecto[0])
     axes[0].set_title('Vista Axial')
 
     # Vista coronal
-    axes[1].imshow(volumen[:, corte_coronal, :], cmap='gray', aspect=aspect_coronal)
+    axes[1].imshow(volumen[:, corte_coronal, :], cmap='gray', aspect=relacion_aspecto[1])
     axes[1].set_title('Vista Coronal')
 
     # Vista sagital
-    axes[2].imshow(volumen[:, :, corte_sagital], cmap='gray', aspect=aspect_sagital)
+    axes[2].imshow(volumen[:, :, corte_sagital], cmap='gray', aspect=relacion_aspecto[2])
     axes[2].set_title('Vista Sagital')
 
     plt.tight_layout()
     plt.show()
-
 
 def segmentacion_hu(volumen, umbrales_hu):
     '''
@@ -200,20 +201,22 @@ def segmentacion_hu(volumen, umbrales_hu):
         segmentaciones[tejido] = np.logical_and(volumen >= hu_min, volumen <= hu_max).astype(np.uint8)
     return segmentaciones
 
-
-def MuestraSegmentaciones(volumen, tamaño_imagen, aspecto_axial, aspecto_coronal, aspecto_sagital, umbrales_hu):
+def MuestraSegmentaciones(imagenes, umbrales_hu):
     '''
     Realiza la segmentación y muestra las vistas axial, coronal y sagital para cada tejido.
     '''
+    # Crear volumen a partir de las imágenes
+    volumen, tamaño_imagen, relacion_aspecto, _ = CreaVolumen(imagenes)
+    
     # Obtener segmentaciones
     segmentaciones = segmentacion_hu(volumen, umbrales_hu)
 
     # Mostrar el volumen original
-    MuestraVolumen(volumen, tamaño_imagen, aspecto_axial, aspecto_coronal, aspecto_sagital, titulo="Volumen Original")
+    MuestraVolumen(imagenes, titulo="Volumen Original")
 
     # Mostrar cada segmento por tejido
     for tejido, segmentacion in segmentaciones.items():
-        MuestraVolumen(segmentacion, tamaño_imagen, aspecto_axial, aspecto_coronal, aspecto_sagital, titulo=f"Segmentación: {tejido.capitalize()}")
+        MuestraVolumen(segmentacion, tamaño_imagen, relacion_aspecto[0], relacion_aspecto[1], relacion_aspecto[2], titulo=f"Segmentación: {tejido.capitalize()}")
 
 
 # Definir los umbrales de HU específicos para cada tejido
@@ -229,13 +232,19 @@ umbrales_hu = {
 #NUEVO DE OTSU:
 
 
-def Segmentar_Otsu(volumen):
+import numpy as np
+from skimage import io
+from skimage.filters import threshold_multiotsu
+
+def Segmentar_Otsu(volumen, classes=3):
     '''
-    Segmenta tejidos en un volumen 3D utilizando el umbral Otsu.
+    Segmenta tejidos en un volumen 3D utilizando el umbral Otsu con múltiples clases.
 
     Parámetros:
      volumen:
          Array 3D con valores de imagen a segmentar.
+     classes:
+         Número de clases para la segmentación (por defecto es 5).
 
     Returns:
      volumen_segmentado:
@@ -243,47 +252,42 @@ def Segmentar_Otsu(volumen):
     '''
     # Inicializar un volumen para las máscaras segmentadas
     volumen_segmentado = np.zeros(volumen.shape)
-    
+
     # Recorrer cada corte del volumen
     for i in range(volumen.shape[0]):
-        # Obtener la imagen del corte actual
         imagen = volumen[i]
         
-        # Calcular el umbral de Otsu
-        umbral = threshold_otsu(imagen)
+        # Calcular los umbrales de Otsu para múltiples clases
+        thresholds = threshold_multiotsu(imagen, classes)
         
-        # Aplicar el umbral para crear la máscara segmentada
-        volumen_segmentado[i] = imagen > umbral
+        # Generar las regiones usando los umbrales
+        regions_image = np.digitize(imagen, bins=thresholds)
+        
+        # Almacenar la imagen segmentada en el volumen segmentado
+        volumen_segmentado[i] = regions_image
     
     return volumen_segmentado
 
-
-def MuestraSegmentacionOtsu(volumen, tamaño_imagen, aspecto_axial, aspecto_coronal, aspecto_sagital):
+def MuestraSegmentacionOtsu(imagenes):
     '''
     Realiza la segmentación mediante Otsu y muestra las vistas axial, coronal y sagital.
 
     Parámetros:
-     volumen:
-         Array 3D del volumen de imágenes.
-     tamaño_imagen:
-         Dimensiones del volumen (profundidad, altura, ancho).
-     aspecto_axial:
-         Relación de aspecto para la vista axial.
-     aspecto_coronal:
-         Relación de aspecto para la vista coronal.
-     aspecto_sagital:
-         Relación de aspecto para la vista sagital.
+     imagenes:
+         Lista de objetos DICOM que contienen información de las imágenes.
     '''
+    # Crear volumen a partir de las imágenes
+    volumen, tamaño_imagen, relacion_aspecto, _ = CreaVolumen(imagenes)
+
     # Obtener el volumen segmentado
-    volumen_segmentado = Segmentar_Otsu(volumen)
+    volumen_segmentado = Segmentar_Otsu(volumen, classes=5)
 
     # Mostrar el volumen segmentado en las vistas axial, coronal y sagital
-    MuestraVolumen(volumen_segmentado, tamaño_imagen, aspecto_axial, aspecto_coronal, aspecto_sagital, titulo="Segmentación Otsu")
+    MuestraVolumen(volumen_segmentado, tamaño_imagen, relacion_aspecto[0], relacion_aspecto[1], relacion_aspecto[2], titulo="Segmentación Otsu")
 
+# Ejemplo de uso
+# MuestraSegmentacionOtsu(imagenes)
 
-import os
-from skimage import io
-import numpy as np
 
 def guarda_segmentaciones_hu(segmentaciones, tipo_corte="axial", carpeta_salida="imagenes_hu"):
     """
@@ -294,12 +298,9 @@ def guarda_segmentaciones_hu(segmentaciones, tipo_corte="axial", carpeta_salida=
         tipo_corte: Tipo de corte ("axial", "coronal", "sagital").
         carpeta_salida: Ruta de la carpeta donde se guardarán las imágenes.
     """
-    # creamos carpeta de salida si no existe
-    os.makedirs(carpeta_salida)
+    os.makedirs(carpeta_salida, exist_ok=True)
     
-    # guardar cada segmento como una imagen individual
     for tejido, segmentacion in segmentaciones.items():
-        # Seleccionar el corte de acuerdo al tipo especificado
         if tipo_corte == "axial":
             imagen = segmentacion[segmentacion.shape[0] // 2, :, :]
         elif tipo_corte == "coronal":
@@ -308,14 +309,13 @@ def guarda_segmentaciones_hu(segmentaciones, tipo_corte="axial", carpeta_salida=
             imagen = segmentacion[:, :, segmentacion.shape[2] // 2]
         else:
             print("Tipo de corte no válido. Usa 'axial', 'coronal' o 'sagital'.")
+            
         
+        nombre_archivo = f"{tejido}_{tipo_corte}.png"
+        ruta_completa = os.path.join(carpeta_salida, nombre_archivo)
         
-    nombre_archivo = f"{tejido}_{tipo_corte}.png"
-    ruta_completa = carpeta_salida + "/" + nombre_archivo
-    
-    # Guardar la imagen en formato PNG
-    io.imsave(ruta_completa, imagen.astype(np.uint8) * 255)  # Convertir a escala de grises
-    print(f"Imagen guardada: {ruta_completa}")
+        io.imsave(ruta_completa, imagen.astype(np.uint8) * 255)  # Convertir a escala de grises
+        print(f"Imagen guardada: {ruta_completa}")
 
 
 
@@ -357,3 +357,4 @@ def GuardaSegmentacionOtsu(volumen_segmentado, tipo_corte="axial", carpeta_salid
     # Guardar la imagen en formato PNG
     io.imsave(ruta_completa, imagen.astype(np.uint8) * 255)
     print(f"Imagen guardada en: {ruta_completa}")
+
