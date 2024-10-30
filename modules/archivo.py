@@ -14,16 +14,16 @@ from pathlib import Path
 
 def Load_Slices(foldername):
     '''
-    Carga todos los archivos DICOM en una lista desde la carpeta especificada.
+    Esta función carga todos los archivos DICOM en una lista desde la carpeta que le especificamos.
 
     Parámetros:
 
-     foldername: 
+     - foldername: 
          Ruta de la carpeta que contiene los archivos DICOM (.dcm) a cargar.
 
     Returns:
 
-     lista:
+     - lista:
          Lista donde cada elemento es un archivo DICOM cargado, con toda su información.
     '''
     
@@ -51,13 +51,13 @@ def CreaVolumen(imagenes):
 
     Returns:
     
-     volumen: 
+     - volumen: 
          Volumen 3D de las imágenes convertidas a escala Hounsfield.
-     volumen.shape:
+     - volumen.shape:
          Dimensiones del volumen 3D.
-     relacion_aspecto: 
+     -relacion_aspecto: 
          Relación de aspecto del volumen en las tres dimensiones.
-     tamaño_voxel: 
+     - tamaño_voxel: 
          Tamaño del voxel en el espacio tridimensional.
     '''
     
@@ -159,33 +159,40 @@ def MetadataDT(imagenes):
 
 
 
-
-
 import numpy as np
 import matplotlib.pyplot as plt
 
-def MuestraVolumen(imagenes, titulo="Volumen"):
+def MuestraVolumen(imagenes):
     '''
-    Crea un volumen 3D a partir de imágenes DICOM y muestra vistas axial, coronal y sagital.
+    Crea un volumen 3D a partir de imágenes DICOM utilizando la función implementada anteriormente creaVolumen y muestra vistas axial, coronal y sagital.
+
+    Parametros:
+     - imagenes: 
+         Lista de imagenes de tipo DICOM con distintos cortes de las mismas imágenes 
+
+    Returns:
+     No devuelve nada, muestra las imagenes creadas
     '''
+    
     volumen, tamaño_imagen, relacion_aspecto, _ = CreaVolumen(imagenes)
 
+    #seleccionamos los cortes centrales para cada una de las vistas
     corte_axial = tamaño_imagen[0] // 2  
     corte_coronal = tamaño_imagen[1] // 2  
     corte_sagital = tamaño_imagen[2] // 2  
 
     fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-    fig.suptitle(titulo, fontsize=16)
+    
 
-    # Vista axial
+    #vista axial
     axes[0].imshow(volumen[corte_axial, :, :], cmap='gray', aspect=relacion_aspecto[0])
     axes[0].set_title('Vista Axial')
 
-    # Vista coronal
+    # vista coronal
     axes[1].imshow(volumen[:, corte_coronal, :], cmap='gray', aspect=relacion_aspecto[1])
     axes[1].set_title('Vista Coronal')
 
-    # Vista sagital
+    # vista sagital
     axes[2].imshow(volumen[:, :, corte_sagital], cmap='gray', aspect=relacion_aspecto[2])
     axes[2].set_title('Vista Sagital')
 
@@ -195,20 +202,47 @@ def MuestraVolumen(imagenes, titulo="Volumen"):
 def segmentacion_hu(volumen, umbrales_hu):
     '''
     Segmenta un volumen 3D según los umbrales de Hounsfield Units.
+
+    Parametros:
+     - volumen:
+         Es un array tridimensional que simula un volumen de imagenes en HU
+     - umbrales_hu:
+         Diccionario cuyas claves son los tipos de tejidos y sus valores tuplas de valores correspondientes al rango de HU de cada tejido
+
+    Returns:
+     - segmentaciones:
+          Diccionario con una máscara para cada tejido.
+              - 1--> presencia del tejido
+              - 0 --> ausencia del tejido
+        
     '''
     segmentaciones = {}
+    #bucle para iterar sobre cada tejido y sus umbrales
     for tejido, (hu_min, hu_max) in umbrales_hu.items():
+        #creamos mascara binaria pra los tejidos
         segmentaciones[tejido] = np.logical_and(volumen >= hu_min, volumen <= hu_max).astype(np.uint8)
     return segmentaciones
 
 def MuestraSegmentaciones(imagenes, umbrales_hu):
     '''
     Realiza la segmentación y muestra las vistas axial, coronal y sagital para cada tejido.
+
+    Parametros:
+     - imagenes:
+          Lista de imagenes de tipo DICOM con distintos cortes de las mismas imágenes
+     - umbrales_hu:
+         Diccionario cuyas claves son los tipos de tejidos y sus valores tuplas de valores correspondientes al rango de HU de cada tejido
+
+
+    Returns:
+        No devuelve nada, muestra por pantalla las imágenes
+          
+    
     '''
     # Crear volumen a partir de las imágenes
     volumen, tamaño_imagen, relacion_aspecto, _ = CreaVolumen(imagenes)
     
-    # Obtener segmentaciones
+    #obtenemos las segmentaciones
     segmentaciones = segmentacion_hu(volumen, umbrales_hu)
 
     # Mostrar el volumen original
@@ -229,8 +263,6 @@ umbrales_hu = {
 }
 
 
-#NUEVO DE OTSU:
-
 
 import numpy as np
 from skimage import io
@@ -244,7 +276,7 @@ def Segmentar_Otsu(volumen, classes=3):
      volumen:
          Array 3D con valores de imagen a segmentar.
      classes:
-         Número de clases para la segmentación (por defecto es 5).
+         Número de clases para la segmentación
 
     Returns:
      volumen_segmentado:
@@ -257,10 +289,10 @@ def Segmentar_Otsu(volumen, classes=3):
     for i in range(volumen.shape[0]):
         imagen = volumen[i]
         
-        # Calcular los umbrales de Otsu para múltiples clases
+        #calculamos umbrales de Otsu para múltiples clases
         thresholds = threshold_multiotsu(imagen, classes)
         
-        # Generar las regiones usando los umbrales
+        # Genera regiones usando los umbrales
         regions_image = np.digitize(imagen, bins=thresholds)
         
         # Almacenar la imagen segmentada en el volumen segmentado
@@ -275,6 +307,10 @@ def MuestraSegmentacionOtsu(imagenes):
     Parámetros:
      imagenes:
          Lista de objetos DICOM que contienen información de las imágenes.
+
+
+    Returns:
+     No devuelve nada, muestra las imagnes por pantalla
     '''
     # Crear volumen a partir de las imágenes
     volumen, tamaño_imagen, relacion_aspecto, _ = CreaVolumen(imagenes)
@@ -285,8 +321,6 @@ def MuestraSegmentacionOtsu(imagenes):
     # Mostrar el volumen segmentado en las vistas axial, coronal y sagital
     MuestraVolumen(volumen_segmentado, tamaño_imagen, relacion_aspecto[0], relacion_aspecto[1], relacion_aspecto[2], titulo="Segmentación Otsu")
 
-# Ejemplo de uso
-# MuestraSegmentacionOtsu(imagenes)
 
 
 def guarda_segmentaciones_hu(segmentaciones, tipo_corte="axial", carpeta_salida="imagenes_hu"):
