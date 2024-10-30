@@ -61,7 +61,7 @@ def CreaVolumen(imagenes):
          Tamaño del voxel en el espacio tridimensional.
     '''
     
-    num_slices = len(imagenes)
+    num_slices =len(imagenes)
     filas, columnas = imagenes[0].pixel_array.shape
 
     # inicializar el array 3D para almacenar el volumen
@@ -141,7 +141,7 @@ def MetadataDT(imagenes):
     tamaño_imagen_mm = (i.Rows * tamaño_voxel[0], i.Columns * tamaño_voxel[1]) if tamaño_voxel != "No disponible" and tamaño_imagen_voxeles != "No disponible" else "No disponible"
     
     # incluimos los metadatos en un diccionario
-    metadatos_imagen = {
+    metadatos_imagen ={
         'Nombre del sujeto': nombre_sujeto,
         'Edad del sujeto': edad_sujeto,
         'Sexo del sujeto': sexo_sujeto,
@@ -216,7 +216,7 @@ def segmentacion_hu(volumen, umbrales_hu):
               - 0 --> ausencia del tejido
         
     '''
-    segmentaciones = {}
+    segmentaciones ={}
     #bucle para iterar sobre cada tejido y sus umbrales
     for tejido, (hu_min, hu_max) in umbrales_hu.items():
         #creamos mascara binaria pra los tejidos
@@ -329,10 +329,13 @@ def guarda_segmentaciones_hu(segmentaciones, tipo_corte="axial", carpeta_salida=
     """
     Guarda las imágenes de las segmentaciones en archivos .png en una carpeta especificada.
     
-    Args:
-        segmentaciones: Diccionario con las segmentaciones de cada tejido.
-        tipo_corte: Tipo de corte ("axial", "coronal", "sagital").
-        carpeta_salida: Ruta de la carpeta donde se guardarán las imágenes.
+    parámetros:
+        segmentaciones:
+            Diccionario con las segmentaciones de cada tejido.
+        tipo_corte: 
+            Tipo de corte ("axial", "coronal", "sagital").
+        carpeta_salida: 
+            Ruta de la carpeta.
     """
     os.makedirs(carpeta_salida, exist_ok=True)
     
@@ -344,10 +347,10 @@ def guarda_segmentaciones_hu(segmentaciones, tipo_corte="axial", carpeta_salida=
         elif tipo_corte == "sagital":
             imagen = segmentacion[:, :, segmentacion.shape[2] // 2]
         else:
-            print("Tipo de corte no válido. Usa 'axial', 'coronal' o 'sagital'.")
+            print("Tipo de corte no válido")
             
         
-        nombre_archivo = f"{tejido}_{tipo_corte}.png"
+        nombre_archivo =f"{tejido}_{tipo_corte}.png"
         ruta_completa = os.path.join(carpeta_salida, nombre_archivo)
         
         io.imsave(ruta_completa, imagen.astype(np.uint8) * 255)  # Convertir a escala de grises
@@ -364,7 +367,7 @@ def GuardaSegmentacionOtsu(volumen_segmentado, tipo_corte="axial", carpeta_salid
     """
     Guarda la imagen de segmentación Otsu en formato PNG en la carpeta especificada.
     
-    Args:
+    Parámetros:
         volumen_segmentado: Volumen 3D segmentado.
         tipo_corte: Tipo de corte ('axial', 'coronal', 'sagital').
         carpeta_salida: Carpeta donde se guardará la imagen.
@@ -383,11 +386,11 @@ def GuardaSegmentacionOtsu(volumen_segmentado, tipo_corte="axial", carpeta_salid
         indice = volumen_segmentado.shape[2] // 2
         imagen = volumen_segmentado[:, :, indice]
     else:
-        print("Tipo de corte no válido. Usa 'axial', 'coronal' o 'sagital'.")
+        print("Tipo de corte no válido")
        
 
     # generar el nombre completo del archivo
-    nombre_archivo = f"{nombre_base}_{tipo_corte}.png"
+    nombre_archivo =f"{nombre_base}_{tipo_corte}.png"
     ruta_completa = carpeta_salida + "/" + nombre_archivo
     
     # Guardar la imagen en formato PNG
