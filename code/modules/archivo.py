@@ -384,7 +384,7 @@ def guarda_segmentaciones_hu(segmentaciones, tipo_corte="axial", carpeta_salida=
     """
     Guarda las imágenes de las segmentaciones en archivos .png en una carpeta especificada.
     
-    Args:
+    Parametros:
         segmentaciones: Diccionario con las segmentaciones de cada tejido.
         tipo_corte: Tipo de corte ("axial", "coronal", "sagital").
         carpeta_salida: Ruta de la carpeta donde se guardarán las imágenes.
@@ -423,7 +423,7 @@ def GuardaSegmentacionOtsu(volumen_segmentado, tipo_corte="axial", carpeta_salid
     """
     Guarda la imagen de segmentación Otsu en formato PNG en la carpeta especificada.
     
-    Args:
+    Parameteos:
         volumen_segmentado: Volumen 3D segmentado.
         tipo_corte: Tipo de corte ('axial', 'coronal', 'sagital').
         carpeta_salida: Carpeta donde se guardará la imagen.
