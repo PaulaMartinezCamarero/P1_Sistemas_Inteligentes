@@ -2,7 +2,7 @@
 """
 Created on 9/10/2024
 
-@author: Paula Martínez Camarero y Andrés Estévez Ubierna
+@author: Paula Martínez Camarero y Andrés Estévez Ubierna.
 """
 
 #FUNCIONES MODULARIZADAS:
