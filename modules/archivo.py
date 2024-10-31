@@ -2,7 +2,7 @@
 """
 Created on 9/10/2024
 
-@author: Paula Martínez Camarero y Andrés Estévez Ubierna.
+@author: Paula Martínez Camarero y Andrés Estévez Ubierna
 """
 
 #FUNCIONES MODULARIZADAS:
@@ -14,16 +14,16 @@ from pathlib import Path
 
 def Load_Slices(foldername):
     '''
-    Esta función carga todos los archivos DICOM en una lista desde la carpeta que le especificamos.
+    Carga todos los archivos DICOM en una lista desde la carpeta especificada.
 
     Parámetros:
 
-     - foldername: 
+     foldername: 
          Ruta de la carpeta que contiene los archivos DICOM (.dcm) a cargar.
 
     Returns:
 
-     - lista:
+     lista:
          Lista donde cada elemento es un archivo DICOM cargado, con toda su información.
     '''
     
@@ -51,13 +51,13 @@ def CreaVolumen(imagenes):
 
     Returns:
     
-     - volumen: 
+     volumen: 
          Volumen 3D de las imágenes convertidas a escala Hounsfield.
-     - volumen.shape:
+     volumen.shape:
          Dimensiones del volumen 3D.
-     -relacion_aspecto: 
+     relacion_aspecto: 
          Relación de aspecto del volumen en las tres dimensiones.
-     - tamaño_voxel: 
+     tamaño_voxel: 
          Tamaño del voxel en el espacio tridimensional.
     '''
     
@@ -298,3 +298,164 @@ umbrales_hu = {
     "hueso esponjoso": (150, 300),
     "hueso compacto": (300, 1500)
 }
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+from skimage.filters import threshold_otsu
+
+def Segmentar_Otsu(volumen):
+    '''
+    Segmenta tejidos en un volumen 3D utilizando el umbral Otsu.
+
+    Parámetros:
+     volumen:
+         Array 3D con valores de imagen a segmentar.
+
+    Returns:
+     volumen_segmentado:
+         Array 3D con las máscaras segmentadas.
+    '''
+    #inicializamos un volumen para las máscaras segmentadas
+    volumen_segmentado = np.zeros(volumen.shape)
+    
+    # recorremos cada corte del volumen
+    for i in range(volumen.shape[0]):
+        # obtener la imagen del corte actual
+        imagen = volumen[i]
+        
+        # calcular el umbral de Otsu
+        umbral = threshold_otsu(imagen)
+        
+        # aplicar el umbral para crear la máscara segmentada
+        volumen_segmentado[i] = imagen > umbral
+    
+    return volumen_segmentado
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def MuestraSegmentacionOtsu(volumen_segmentado, tipo_corte="axial", titulo="Segmentación Otsu"):
+    '''
+    Muestra el volumen segmentado usando el método de Otsu.
+
+    Parámetros:
+     volumen_segmentado:
+         Array 3D con el volumen segmentado.
+     tipo_corte: 
+         Tipo de corte.
+     titulo: 
+         Título de la visualización.
+    '''
+    
+    #definir el índice central para el corte
+    if tipo_corte == "axial":
+        indice = volumen_segmentado.shape[0] // 2
+    elif tipo_corte == "coronal":
+        indice = volumen_segmentado.shape[1] // 2
+    elif tipo_corte == "sagital":
+        indice = volumen_segmentado.shape[2] // 2
+    else:
+        print("Tipo de corte no válido. Usa 'axial', 'coronal' o 'sagital'.")
+
+
+    # seleccionar el corte según el tipo
+    if tipo_corte == "axial":
+        corte_segmentado = volumen_segmentado[indice, :, :]
+    elif tipo_corte == "coronal":
+        corte_segmentado = volumen_segmentado[:, indice, :]
+    elif tipo_corte == "sagital":
+        corte_segmentado = volumen_segmentado[:, :, indice]
+
+    # mostramos segmentación
+    plt.figure(figsize=(8, 8))
+    plt.imshow(corte_segmentado, cmap='gray')
+    plt.title(f"{titulo} ({tipo_corte.capitalize()})")
+    plt.axis('off')
+    plt.show()
+
+
+import os
+from skimage import io
+import numpy as np
+
+def guarda_segmentaciones_hu(segmentaciones, tipo_corte="axial", carpeta_salida="imagenes_hu"):
+    """
+    Guarda las imágenes de las segmentaciones en archivos .png en una carpeta especificada.
+    
+    Parametros:
+        segmentaciones:
+            Diccionario con las segmentaciones de cada tejido.
+        tipo_corte:
+            Tipo de corte.
+        carpeta_salida:
+            Ruta de la carpeta donde se guardarán las imágenes.
+    """
+    # creamos carpeta de salida si no existe
+    os.makedirs(carpeta_salida)
+    
+    # guardar cada segmento como una imagen individual
+    for tejido, segmentacion in segmentaciones.items():
+        # Seleccionar el corte de acuerdo al tipo especificado
+        if tipo_corte == "axial":
+            imagen = segmentacion[segmentacion.shape[0] // 2, :, :]
+        elif tipo_corte == "coronal":
+            imagen = segmentacion[:, segmentacion.shape[1] // 2, :]
+        elif tipo_corte == "sagital":
+            imagen = segmentacion[:, :, segmentacion.shape[2] // 2]
+        else:
+            print("Tipo de corte no válido")
+        
+        
+    nombre_archivo = f"{tejido}_{tipo_corte}.png"
+    ruta_completa = carpeta_salida + "/" + nombre_archivo
+    
+    # Guardar la imagen en formato PNG
+    io.imsave(ruta_completa, imagen.astype(np.uint8) * 255)  # Convertir a escala de grises
+    print(f"Imagen guardada: {ruta_completa}")
+
+
+
+
+import os
+from skimage import io
+import numpy as np
+
+def GuardaSegmentacionOtsu(volumen_segmentado, tipo_corte="axial", carpeta_salida="imagenes_otsu", nombre_base="segmentacion"):
+    """
+    Guarda la imagen de segmentación Otsu en formato PNG en la carpeta especificada.
+    
+    parametros:
+        volumen_segmentado: 
+            Volumen 3D segmentado.
+        tipo_corte: 
+            Tipo de corte.
+        carpeta_salida:
+            Carpeta donde se guardará la imagen
+        nombre_base:
+            nombre base para el archivo de imagen.
+    """
+    os.makedirs(carpeta_salida)
+    
+    # definir el corte según el tipo especificado
+    if tipo_corte == "axial":
+        indice = volumen_segmentado.shape[0] // 2
+        imagen = volumen_segmentado[indice, :, :]
+    elif tipo_corte == "coronal":
+        indice = volumen_segmentado.shape[1] // 2
+        imagen = volumen_segmentado[:, indice, :]
+    elif tipo_corte == "sagital":
+        indice = volumen_segmentado.shape[2] // 2
+        imagen = volumen_segmentado[:, :, indice]
+    else:
+        print("Tipo de corte no válido.")
+       
+
+    # generar el nombre completo del archivo
+    nombre_archivo = f"{nombre_base}_{tipo_corte}.png"
+    ruta_completa = carpeta_salida + "/" + nombre_archivo
+    
+    # Guardar la imagen en formato PNG
+    io.imsave(ruta_completa, imagen.astype(np.uint8) * 255)
+    print(f"Imagen guardada en: {ruta_completa}")
