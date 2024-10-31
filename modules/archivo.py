@@ -95,12 +95,12 @@ def CreaVolumen(imagenes):
 
 def MetadataDT(imagenes):
     '''
-    Extrae y organiza metadatos importantes de las imágenes DICOM, incluidos datos del paciente y detalles técnicos de la imagen.
+    Extrae y organiza datos importantes de las imágenes DICOM, como datos del paciente entreo otros.
 
     Parámetros:
     
      imagenes:
-         Lista de objetos DICOM que contienen los metadatos de las imágenes, incluyendo información del paciente y    propiedades de la imagen.
+         Lista de objetos DICOM que contienen los datos de las imágenes, incluyendo información del paciente y propiedades de la imagen.
 
     Returns:
     
@@ -243,7 +243,7 @@ def mostrar_segmentaciones(volumen, segmentaciones, tipo_corte="axial", titulo="
      segmentaciones:
          Diccionario con segmentaciones de los tejidos.
      tipo_corte:
-         El tipo de corte a mostrar ("axial", "coronal" o "sagital").
+         El tipo de corte.
      titulo:
          Título del gráfico.
     '''
@@ -255,7 +255,7 @@ def mostrar_segmentaciones(volumen, segmentaciones, tipo_corte="axial", titulo="
     elif tipo_corte == "sagital":
         indice = volumen.shape[2] // 2
     else:
-        print("Tipo de corte no válido. Usa 'axial', 'coronal' o 'sagital'.")
+        print("Tipo de corte no válido.")
         
 
     fig, axes = plt.subplots(1, len(segmentaciones) + 1, figsize=(20, 5))
@@ -357,7 +357,7 @@ def MuestraSegmentacionOtsu(volumen_segmentado, tipo_corte="axial", titulo="Segm
     elif tipo_corte == "sagital":
         indice = volumen_segmentado.shape[2] // 2
     else:
-        print("Tipo de corte no válido. Usa 'axial', 'coronal' o 'sagital'.")
+        print("Tipo de corte no válido")
 
 
     # seleccionar el corte según el tipo
